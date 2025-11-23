@@ -1,0 +1,32 @@
+### Prueba del endpoint render-batch con el fix del campo 'model'
+POST http://localhost:8000/api/render-batch
+Content-Type: application/json
+X-API-Key: change-me-very-secret
+
+{
+  "job_id": "EP-0007",
+  "model": "flux-kontext-pro",
+  "aspectRatio": "9:16",
+  "enableTranslation": false,
+  "planos": [
+    {"id":"P1","prompt":"test prompt 1","negative":"text,logo","seed":421001,"quality":"draft"},
+    {"id":"P2","prompt":"test prompt 2","negative":"text,logo","seed":421002,"quality":"draft"},
+    {"id":"P3","prompt":"test prompt 1","negative":"text,logo","seed":421001,"quality":"draft"}
+  ]
+}
+
+### Comando curl equivalente para probar
+### curl -X POST http://localhost:8000/api/render-batch \
+###   -H "Content-Type: application/json" \
+###   -H "X-API-Key: change-me-very-secret" \
+###   -d '{
+###     "job_id": "EP-0007",
+###     "model": "flux-kontext-pro",
+###     "aspectRatio": "9:16",
+###     "enableTranslation": false,
+###     "planos": [
+###       {"id":"P1","prompt":"test prompt 1","negative":"text,logo","seed":421001,"quality":"draft"},
+###       {"id":"P2","prompt":"test prompt 2","negative":"text,logo","seed":421002,"quality":"draft"},
+###       {"id":"P3","prompt":"test prompt 1","negative":"text,logo","seed":421001,"quality":"draft"}
+###     ]
+###   }'
