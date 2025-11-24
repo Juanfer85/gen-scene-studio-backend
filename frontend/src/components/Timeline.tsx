@@ -30,6 +30,7 @@ import {
 import { toast } from 'sonner';
 import { apiService } from '@/services/api';
 import { useJobsStore } from '@/store/jobsStore';
+import { VideoStyleSelector } from './VideoStyleSelector';
 
 const KENBURNS_EFFECTS = [
   { id: 'none', name: 'Sin Efecto', description: 'Imagen estática' },
@@ -69,6 +70,7 @@ interface VideoSettings {
   fadeOutMs: number;
   loudnorm: boolean;
   outputName: string;
+  videoStyle: string;
 }
 
 export function Timeline() {
@@ -85,6 +87,7 @@ export function Timeline() {
     fadeOutMs: 500,
     loudnorm: true,
     outputName: '',
+    videoStyle: 'cinematic_realism', // Valor por defecto
   });
 
   const { addJob, updateJob } = useJobsStore();
@@ -656,6 +659,16 @@ export function Timeline() {
                     placeholder="mi-video.mp4"
                     value={videoSettings.outputName}
                     onChange={(e) => setVideoSettings(prev => ({ ...prev, outputName: e.target.value }))}
+                  />
+                </div>
+
+                {/* Video Style */}
+                <div className="space-y-2">
+                  <Label>Estilo de Video</Label>
+                  <VideoStyleSelector
+                    value={videoSettings.videoStyle}
+                    onChange={(styleId) => setVideoSettings(prev => ({ ...prev, videoStyle: styleId }))}
+                    placeholder="Seleccionar estilo de video..."
                   />
                 </div>
 
