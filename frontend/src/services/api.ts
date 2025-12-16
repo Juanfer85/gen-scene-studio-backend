@@ -10,8 +10,8 @@ import {
 
 // Environment variables validation
 const validateEnvironment = () => {
-  const required = ['VITE_API_URL', 'VITE_API_KEY'];
-  const missing = required.filter(key => !import.meta.env[key]);
+  const required = ['NEXT_PUBLIC_API_URL', 'NEXT_PUBLIC_API_KEY'];
+  const missing = required.filter(key => !process.env[key]);
 
   if (missing.length > 0) {
     throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
@@ -28,9 +28,9 @@ class ApiService {
     // Validate environment variables
     validateEnvironment();
 
-    this.baseURL = import.meta.env.VITE_API_URL;
-    this.apiKey = import.meta.env.VITE_API_KEY;
-    this.timeout = parseInt(import.meta.env.VITE_API_TIMEOUT || '30000');
+    this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    this.apiKey = process.env.NEXT_PUBLIC_API_KEY || '';
+    this.timeout = parseInt(process.env.NEXT_PUBLIC_API_TIMEOUT || '30000');
 
     this.client = axios.create({
       baseURL: this.baseURL,
@@ -43,7 +43,7 @@ class ApiService {
 
     // Request interceptor for debugging and logging
     this.client.interceptors.request.use((config) => {
-      if (import.meta.env.VITE_DEBUG === 'true') {
+      if (process.env.NODE_ENV === 'development') {
         console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`, {
           data: config.data,
           params: config.params,
@@ -55,7 +55,7 @@ class ApiService {
     // Response interceptor for error handling and debugging
     this.client.interceptors.response.use(
       (response) => {
-        if (import.meta.env.VITE_DEBUG === 'true') {
+        if (process.env.NODE_ENV === 'development') {
           console.log(`API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, {
             status: response.status,
             data: response.data,
@@ -146,6 +146,110 @@ class ApiService {
     reason?: string;
   }> {
     const response = await this.client.get(`/api/compose-result?job_id=${jobId}`);
+    return response.data;
+  }
+
+  // Quick Create endpoint
+  async quickCreateFullUniverse(payload: any): Promise<any> {
+    console.log("DEBUG QuickCreateFullUniverse URL:", this.baseURL, `${this.baseURL}/api/quick-create-full-universe`);
+    const response = await this.client.post('/api/quick-create-full-universe', payload);
+    return response.data;
+  }
+
+  // Jobs Hub endpoint
+  async getJobsHub(): Promise<{ jobs: any[]; total: number }> {
+    const response = await this.client.get('/api/jobs-hub');
+    return response.data;
+  }
+
+  // ============================================================================
+  // VIDEO MODELS ENDPOINTS
+  // ============================================================================
+
+  /**
+   * Obtener todos los modelos de video disponibles
+   */
+  async getVideoModels(): Promise<{
+    models: Array<{
+      id: string;
+      name: string;
+      tier: 'premium' | 'high' | 'economic';
+      credits_5s: number;
+      max_duration: number;
+      features: string[];
+      description: string;
+      recommended_for: string[];
+    }>;
+    total: number;
+    default_model: string;
+  }> {
+    const response = await this.client.get('/api/video-models');
+    return response.data;
+  }
+
+  /**
+   * Obtener el mapeo de estilos a modelos
+   */
+  async getStyleModelMapping(): Promise<{
+    mapping: Record<string, string>;
+    available_styles: string[];
+    note: string;
+  }> {
+    const response = await this.client.get('/api/style-model-mapping');
+    return response.data;
+  }
+
+  /**
+   * Obtener el modelo recomendado para un estilo específico
+   */
+  async getRecommendedModel(styleKey: string): Promise<{
+    style_key: string;
+    recommended_model: string;
+    model_info: {
+      id: string;
+      name: string;
+      tier: string;
+      credits_5s: number;
+      max_duration: number;
+      features: string[];
+      description: string;
+    };
+    can_override: boolean;
+    available_models: string[];
+  }> {
+    const response = await this.client.get(`/api/recommended-model/${styleKey}`);
+    return response.data;
+  }
+
+  /**
+   * Quick Create con soporte para selección de modelo
+   * @param payload Datos del job incluyendo video_model opcional
+   */
+  async quickCreateWithModel(payload: {
+    idea_text: string;
+    duration: string;
+    style_key: string;
+    auto_create_universe?: boolean;
+    video_model?: string | null;  // null = auto-select based on style
+    video_duration?: number;
+    video_quality?: '720p' | '1080p';
+    aspect_ratio?: '16:9' | '9:16' | '1:1';
+  }): Promise<{
+    job_id: string;
+    episode_id?: string;
+    series_id?: string;
+    character_id?: string;
+    status: 'queued' | 'processing' | 'error';
+    estimated_time_sec?: number;
+    message: string;
+  }> {
+    // Si video_model es null, no lo enviamos para que el backend auto-seleccione
+    const cleanPayload = { ...payload };
+    if (cleanPayload.video_model === null) {
+      delete cleanPayload.video_model;
+    }
+
+    const response = await this.client.post('/api/quick-create-full-universe', cleanPayload);
     return response.data;
   }
 
