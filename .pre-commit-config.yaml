@@ -1,0 +1,121 @@
+# Pre-commit configuration for Gen Scene Studio Backend
+# https://pre-commit.com/
+
+repos:
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: pytest
+        language: system
+        files: ^tests/
+        pass_filenames: conftest.py
+
+  - repo: https://github.com/psf/black
+    rev: 23.11.0
+    hooks:
+      - id: black
+        name: 🖤 Black Format
+        language_version: python3
+        args: [--color, --line-length=100]
+        files: ^src/.*\.py$
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        name: 📚 isort
+        args: [--color, --profile=black, --line-length=100]
+        files: ^src/.*\.py$
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 6.1.0
+    hooks:
+      - id: flake8
+        name: 🔎 Flake8 Lint
+        args: [--max-line-length=100, --extend-ignore=E203,W503]
+        files: ^src/.*\.py$
+
+  - repo: https://github.com/pycqa/pydocstyle
+    rev: 6.3.0
+    hooks:
+      - id: pydocstyle
+        name: 📖 pydocstyle
+        args: [--convention=google]
+        files: ^src/.*\.py$
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        name: 🧹 Remove trailing whitespace
+        files: \.(py|yaml|yml|json|md|txt)$
+        args: [--markdown-linebreak-ext=md]
+
+      - id: end-of-file-fixer
+        name: 🧻 Ensure files end with newline
+        files: \.(py|yaml|yml|json|md|txt)$
+
+      - id: check-yaml
+        name: 📋 Check YAML syntax
+        files: \.(yaml|yml)$
+        types: [yaml]
+
+      - id: check-json
+        name: 📋 Check JSON syntax
+        files: \.(json)$
+        types: [json]
+
+      - id: check-toml
+        name: 📋 Check TOML syntax
+        files: \.(toml)$
+        types: [toml]
+
+      - id: check-merge-conflict
+        name: 🔀 Check for merge conflicts
+        files: \.*
+        args: [--assume-filename-on-stdin]
+
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.5
+    hooks:
+      - id: bandit
+        name: 🔒 Bandit Security Lint
+        args: [-c pyproject.toml]
+        files: ^src/.*\.py$
+        pass_filenames: test_.*\.py  # Skip test files
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.7.1
+    hooks:
+      - id: mypy
+        name: 🏗️ MyPy Type Checking
+        additional_dependencies:
+          - types-PyYAML>=6.0.12
+          - types-python-dateutil>=2.8.19.14
+        args: [--ignore-missing-imports]
+        files: ^src/.*\.py$
+        pass_filenames: test_.*\.py  # Skip test files
+
+  - repo: https://github.com/pycqa/docformatter
+    rev: 1.7.5
+    hooks:
+      - id: docformatter
+        name: 📖 Format docstrings
+        args: [--in-place]
+        files: ^src/.*\.py$
+
+  - repo: https://github.com/mgedmin/python-semver
+    rev: 0.2.0
+    hooks:
+      - id: semver
+        name: 🔢 Check semantic versioning
+        files: ^(setup|pyproject|requirements).*\.(py|toml|txt)$
+
+  - repo: https://github.com/Lucas-C/pre-commit-hooks-safety
+    rev: v1.3.2
+    hooks:
+      - id: python-safety-dependencies-check
+        name: 🛡️ Safety Check
+        args: [--short-report, --disable-telemetry]
+        files: requirements*.txt
