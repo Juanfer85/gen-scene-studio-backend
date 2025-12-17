@@ -1,0 +1,419 @@
+name: 🧪 Test Suite - Gen Scene Studio Backend
+
+on:
+  push:
+    branches: [ main, develop, 'feature/*', 'fix/*' ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '20'
+
+jobs:
+  lint-and-format:
+    name: 🔍 Code Quality Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: 📦 Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r tests/requirements.txt
+          pip install -r requirements.txt 2>/dev/null || echo "No production requirements.txt"
+
+      - name: 🔍 Black Formatting Check
+        run: |
+          black --version
+          black --check --diff --color src/ tests/
+
+      - name: 📚 isort Import Sorting
+        run: |
+          isort --version-only
+          isort --check-only --diff --color src/ tests/
+
+      - name: 🔎 Flake8 Linting
+        run: |
+          flake8 --version
+          flake8 --max-line-length=100 --extend-ignore=E203,W503 src/ tests/
+
+      - name: 🔒 Bandit Security Scanning
+        run: |
+          bandit --version
+          bandit -r src/ -f json -o bandit-report.json
+        continue-on-error: true
+
+      - name: 🛡️ Safety Vulnerability Check
+        run: |
+          safety --version
+          safety check --json --output safety-report.json
+        continue-on-error: true
+
+      - name: 🏗️ MyPy Type Checking
+        run: |
+          mypy --version
+          mypy src/ --junit-xml junit-report.xml
+        continue-on-error: true
+
+  unit-tests:
+    name: 🧪 Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: lint-and-format
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: 📦 Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r tests/requirements.txt
+
+      - name: 🗄️ Set up Test Database
+        run: |
+          mkdir -p tests/reports
+          export TEST_DATABASE_PATH="tests/reports/test.db"
+
+      - name: 🧪 Run Unit Tests
+        run: |
+          pytest tests/unit/ \
+            --cov=src \
+            --cov-report=xml \
+            --cov-report=html \
+            --cov-report=term-missing \
+            --junitxml=tests/reports/junit-unit.xml \
+            --html=tests/reports/unit-test-report.html \
+            -v
+
+      - name: 📊 Upload Coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./tests/reports/coverage.xml
+          flags: unit
+          name: codecov-umbrella
+
+      - name: 📋 Upload Unit Test Results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: unit-test-results
+          path: |
+            tests/reports/
+            htmlcov/
+          retention-days: 7
+
+  integration-tests:
+    name: 🔄 Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: lint-and-format
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: 📦 Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r tests/requirements.txt
+
+      - name: 🗄️ Set up Test Database
+        run: |
+          mkdir -p tests/reports
+          export TEST_DATABASE_PATH="tests/reports/integration-test.db"
+
+      - name: 🔄 Run Integration Tests
+        run: |
+          pytest tests/integration/ \
+            --cov=src \
+            --cov-append \
+            --cov-report=xml \
+            --cov-report=html \
+            --junitxml=tests/reports/junit-integration.xml \
+            --html=tests/reports/integration-test-report.html \
+            -v
+
+      - name: 📊 Upload Coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./tests/reports/coverage.xml
+          flags: integration
+          name: codecov-umbrella
+
+      - name: 📋 Upload Integration Test Results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: integration-test-results
+          path: |
+            tests/reports/
+            htmlcov/
+          retention-days: 7
+
+  e2e-tests:
+    name: 🎭 End-to-End Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: integration-tests
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: 📦 Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r tests/requirements.txt
+
+      - name: 🗄️ Set up Test Database
+        run: |
+          mkdir -p tests/reports
+          export TEST_DATABASE_PATH="tests/reports/e2e-test.db"
+
+      - name: 🎭 Run E2E Tests
+        run: |
+          pytest tests/e2e/ \
+            --maxfail=3 \
+            --cov=src \
+            --cov-append \
+            --cov-report=xml \
+            --cov-report=html \
+            --junitxml=tests/reports/junit-e2e.xml \
+            --html=tests/reports/e2e-test-report.html \
+            -v
+
+      - name: 📊 Upload Coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./tests/reports/coverage.xml
+          flags: e2e
+          name: codecov-umbrella
+
+      - name: 📋 Upload E2E Test Results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: e2e-test-results
+          path: |
+            tests/reports/
+            htmlcov/
+          retention-days: 7
+
+  performance-tests:
+    name: ⚡ Performance Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: integration-tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: 📦 Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r tests/requirements.txt
+
+      - name: 🗄️ Set up Test Database
+        run: |
+          mkdir -p tests/reports
+          export TEST_DATABASE_PATH="tests/reports/performance-test.db"
+
+      - name: ⚡ Run Performance Tests
+        run: |
+          pytest tests/e2e/performance/ \
+            --benchmark-only \
+            --benchmark-json=tests/reports/benchmark.json \
+            --benchmark-html=tests/reports/benchmark.html \
+            --benchmark-min-rounds=3 \
+            -v
+
+      - name: 📊 Benchmark Comparison
+        run: |
+          pip install pytest-benchmark
+          pytest-benchmark compare tests/reports/benchmark.json \
+            --regression-threshold 10% || echo "Performance regression detected"
+
+      - name: 📋 Upload Benchmark Results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: performance-results
+          path: tests/reports/
+          retention-days: 14
+
+  security-scan:
+    name: 🔒 Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: lint-and-format
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: 📦 Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install safety bandit semgrep
+
+      - name: 🔒 Bandit Security Analysis
+        run: |
+          bandit -r src/ -f json -o tests/reports/bandit-security.json
+          bandit -r src/ -f txt -o tests/reports/bandit-security.txt
+
+      - name: 🛡️ Safety Vulnerability Scan
+        run: |
+          safety check --json --output tests/reports/safety-security.json
+          safety check --output tests/reports/safety-security.txt
+
+      - name: 🔍 Semgrep Static Analysis
+        run: |
+          pip install semgrep
+          semgrep --config=auto --json --output=tests/reports/semgrep-security.json src/
+
+      - name: 📋 Upload Security Reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: security-reports
+          path: tests/reports/
+          retention-days: 30
+
+  build-and-deploy:
+    name: 🚀 Build and Deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [unit-tests, integration-tests]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    environment: production
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: 📦 Install Production Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 🏗️ Build Docker Image
+        run: |
+          docker build -t genscene-backend:${{ github.sha }} .
+          docker tag genscene-backend:${{ github.sha }} genscene-backend:latest
+
+      - name: 🚀 Deploy to Production
+        run: |
+          echo "🚀 Deploying to production..."
+          # Add deployment commands here
+          # docker push genscene-backend:${{ github.sha }}
+          # kubectl set image deployment/genscene-backend genscene-backend=genscene-backend:${{ github.sha }}
+          # kubectl rollout status deployment/genscene-backend
+
+  test-summary:
+    name: 📊 Test Summary
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [unit-tests, integration-tests, e2e-tests]
+    if: always()
+
+    steps:
+      - name: 📥 Download Test Results
+        uses: actions/download-artifact@v3
+        with:
+          pattern: "*-test-results"
+          merge-multiple: true
+
+      - name: 📊 Generate Test Summary
+        run: |
+          echo "## 🧪 Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f "unit-test-results/junit-unit.xml" ]; then
+            echo "### ✅ Unit Tests" >> $GITHUB_STEP_SUMMARY
+            python -c "
+              import xml.etree.ElementTree as ET
+              tree = ET.parse('unit-test-results/junit-unit.xml')
+              tests = tree.findall('.//testcase')
+              total = len(tests)
+              failures = len([t for t in tests if t.find('failure') is not None])
+              print(f'**Total:** {total} **Failures:** {failures}')
+              print(f'**Success Rate:** {((total - failures) / total * 100):.1f}%')
+            " >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -f "integration-test-results/junit-integration.xml" ]; then
+            echo "### 🔄 Integration Tests" >> $GITHUB_STEP_SUMMARY
+            python -c "
+              import xml.etree.ElementTree as ET
+              tree = ET.parse('integration-test-results/junit-integration.xml')
+              tests = tree.findall('.//testcase')
+              total = len(tests)
+              failures = len([t for t in tests if t.find('failure') is not None])
+              print(f'**Total:** {total} **Failures:** {failures}')
+              print(f'**Success Rate:** {((total - failures) / total * 100):.1f}%')
+            " >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -f "e2e-test-results/junit-e2e.xml" ]; then
+            echo "### 🎭 End-to-End Tests" >> $GITHUB_STEP_SUMMARY
+            python -c "
+              import xml.etree.ElementTree as ET
+              tree = ET.parse('e2e-test-results/junit-e2e.xml')
+              tests = tree.findall('.//testcase')
+              total = len(tests)
+              failures = len([t for t in tests if t.find('failure') is not None])
+              print(f'**Total:** {total} **Failures:** {failures}')
+              print(f'**Success Rate:** {((total - failures) / total * 100):.1f}%')
+            " >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 Coverage Reports" >> $GITHUB_STEP_SUMMARY
+          echo "Coverage reports are available in the test artifacts." >> $GITHUB_STEP_SUMMARY
