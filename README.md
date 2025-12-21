@@ -1,220 +1,310 @@
-# GenScene Frontend
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.12+-blue?style=for-the-badge&logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/FastAPI-0.100+-teal?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI">
+  <img src="https://img.shields.io/badge/FFmpeg-7.0+-green?style=for-the-badge&logo=ffmpeg&logoColor=white" alt="FFmpeg">
+  <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker">
+</p>
 
-Frontend completo para la plataforma GenScene Studio con integración total a la API backend.
+<h1 align="center">🎬 Gen Scene Studio Backend</h1>
 
-## Características
+<p align="center">
+  <strong>AI-Powered Video Generation Platform for Shorts & Reels</strong>
+</p>
 
-### 🎤 Voz (Text-to-Speech)
-- Convierte texto a audio de alta calidad
-- Múltiples voces y configuraciones
-- Reproducción y descarga de audio
-- Control de velocidad (WPM)
+<p align="center">
+  Create viral short-form videos for TikTok, Instagram Reels, and YouTube Shorts using cutting-edge AI models.
+</p>
 
-### 🎬 Timeline de Video
-- Editor visual de videos
-- Composición de imágenes y audio
-- Efectos Ken Burns
-- Textos overlay con posiciones personalizables
-- Límite de duración de 59 segundos
+---
 
-### 🎨 Storyboard con IA
-- Generación de imágenes con prompts de texto
-- Soporte para múltiples modelos (Kolors, Stable Diffusion, DALL-E)
-- Control de calidad (draft/upscale)
-- Generación por lotes
-- Previsualización y descarga de resultados
+## ✨ Features
 
-### 📦 Procesamiento por Lotes
-- Importación de datos desde CSV
-- Procesamiento masivo de imágenes
-- Monitoreo en tiempo real
-- Exportación de resultados
+| Feature | Description |
+|---------|-------------|
+| 🎬 **7 AI Video Models** | From economic to premium, choose the right model for your needs |
+| 📐 **9:16 Optimized** | Default vertical format for TikTok, Reels & Shorts |
+| ⚡ **Async Workers** | Enterprise-grade job processing with concurrent workers |
+| 🎨 **Smart Model Selection** | Auto-selects the best AI model based on your chosen style |
+| 💾 **Job Persistence** | SQLite database with full job tracking & recovery |
+| 🔐 **API Security** | API key authentication with rate limiting |
 
-### 📊 Monitor de Trabajos
-- Panel centralizado de todos los trabajos
-- Auto-refresh configurable
-- Filtros por estado y tipo
-- Visualización de progreso
+---
 
-### ⚙️ Nuevo Trabajo Automatizado
-- Plantillas predefinidas
-- Flujos de trabajo personalizados
-- Ejecución secuencial de pasos
-- Compartición de datos entre pasos
+## 🚀 Quick Start
 
-## Instalación
+### Prerequisites
 
-1. Clonar el repositorio:
+- Python 3.12+
+- FFmpeg 7.0+
+- Docker (optional)
+
+### Installation
+
 ```bash
-git clone <repository-url>
-cd proyecto_videos_what_if
+# Clone the repository
+git clone https://github.com/Juanfer85/gen-scene-studio-backend.git
+cd gen-scene-studio-backend
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# or
+.\venv\Scripts\activate   # Windows
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Set environment variables
+cp .env.example .env
+# Edit .env with your configuration
 ```
 
-2. Instalar dependencias:
+### Run Development Server
+
 ```bash
-npm install
+uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-3. Configurar variables de entorno:
+### Run with Docker
+
 ```bash
-cp .env.local.example .env.local
+docker compose up -d --build
 ```
 
-Editar `.env.local` con tu configuración:
-```
-NEXT_PUBLIC_API_URL=http://localhost:8000
-NEXT_PUBLIC_API_KEY=tu_api_key_aqui
+---
+
+## 🎨 Video Models
+
+| Model | Tier | Credits/5s | Best For |
+|-------|------|------------|----------|
+| **Wan Turbo** | 💰 Economic | 120 | Fast, budget-friendly |
+| **Bytedance v1** | 💰 Economic | 150 | Social media (default) |
+| **Hailuo I2V** | 💰 Economic | 180 | Artistic styles |
+| **Runway Gen-3** | ⚡ High | 200 | Realistic content |
+| **Kling v2.1 Pro** | ⚡ High | 250 | Anime & stylized |
+| **Google Veo 3.1** | 👑 Premium | 350 | Maximum quality |
+| **OpenAI Sora 2** | 👑 Premium | 400 | Complex narratives |
+
+---
+
+## 📐 Supported Formats
+
+| Format | Dimensions | Use Case |
+|--------|------------|----------|
+| **9:16** (default) | 720 × 1280 | TikTok, Reels, Shorts |
+| 16:9 | 1280 × 720 | YouTube horizontal |
+| 1:1 | 720 × 720 | Instagram feed |
+
+---
+
+## 🔌 API Endpoints
+
+### Health Check
+```http
+GET /health
 ```
 
-4. Iniciar el servidor de desarrollo:
+### Video Models
+```http
+GET /api/video-models
+GET /api/recommended-model/{style_key}
+GET /api/style-model-mapping
+```
+
+### Job Management
+```http
+POST /api/quick-create-full-universe
+GET /api/status?job_id={job_id}
+GET /api/jobs-hub
+DELETE /api/jobs/{job_id}
+```
+
+### Styles
+```http
+GET /styles
+```
+
+---
+
+## 📦 Project Structure
+
+```
+gen-scene-studio-backend/
+├── src/
+│   ├── main.py                 # FastAPI application
+│   ├── worker/
+│   │   └── enterprise_manager.py  # Job processing & video models
+│   ├── core/
+│   │   ├── config.py           # Environment configuration
+│   │   ├── db.py               # Database connection
+│   │   └── logging.py          # Structured logging
+│   ├── models/
+│   │   ├── dao.py              # Data Access Objects
+│   │   └── schemas.py          # Pydantic models
+│   ├── services/
+│   │   └── kie_client.py       # Kie.ai integration
+│   └── utils/
+│       ├── ffmpeg_cmds.py      # FFmpeg utilities
+│       └── styles.py           # Style definitions
+├── tests/
+│   ├── unit/
+│   ├── integration/
+│   └── e2e/
+├── .github/workflows/          # CI/CD
+├── docker-compose.yml
+├── Dockerfile
+└── requirements.txt
+```
+
+---
+
+## ⚙️ Environment Variables
+
+```env
+# API Security
+BACKEND_API_KEY=your_secure_api_key_here
+
+# Database
+DATABASE_URL=sqlite:///./data/genscene.db
+
+# Media Storage
+MEDIA_DIR=/app/media
+
+# Worker Configuration
+WORKER_CONCURRENCY=4
+WORKER_POLL_INTERVAL=2
+
+# Kie.ai Integration
+KIE_API_KEY=your_kie_api_key
+KIE_BASE_URL=https://api.kie.ai
+
+# Environment
+ENVIRONMENT=production
+LOG_LEVEL=INFO
+```
+
+---
+
+## 🧪 Testing
+
 ```bash
-npm run dev
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=src --cov-report=html
+
+# Run specific test file
+pytest tests/unit/test_enterprise_manager.py
 ```
 
-La aplicación estará disponible en `http://localhost:3000`
+---
 
-## Arquitectura
+## 🐳 Docker Deployment
 
-### Estructura de Archivos
+### Build & Run
 
-```
-src/
-├── components/
-│   └── ui/               # Componentes de UI reutilizables
-├── hooks/                # Hooks personalizados (useApiCall, usePolling)
-├── lib/                  # Utilidades y cliente API
-├── pages/                # Páginas de la aplicación
-│   ├── Voz.tsx          # Generador de voz
-│   ├── Timeline.tsx     # Editor de timeline
-│   ├── Storyboard.tsx   # Generador de storyboard
-│   ├── Lote.tsx         # Procesamiento por lotes
-│   ├── Jobs.tsx         # Monitor de trabajos
-│   ├── NewJob.tsx       # Nuevo trabajo automatizado
-│   └── index.tsx        # Página principal
-├── styles/               # Estilos globales
-└── types/                # Definiciones de TypeScript
-```
-
-### Integración con la API
-
-El frontend se integra completamente con los endpoints del backend:
-
-- **POST /api/tts** → Text-to-Speech
-- **POST /api/compose** → Video composition
-- **GET /api/status?job_id=XXX** → Job status
-- **GET /api/compose-result?job_id=XXX** → Video result
-- **POST /api/render-batch** → Batch image generation
-- **GET /files/{job_id}/{filename}** → Download files
-
-### Características Técnicas
-
-- **React 18** con TypeScript
-- **Next.js 14** para routing y SSR
-- **Tailwind CSS** para estilos
-- **Lucide React** para iconos
-- **Axios** para llamadas API con retry automático
-- **Polling inteligente** para actualizaciones en tiempo real
-- **LocalStorage** para persistencia de datos
-- **Manejo de errores** robusto con feedback visual
-- **Indicadores de carga** en todas las operaciones
-
-## Uso
-
-### 1. Voz (TTS)
-1. Ingresa el texto a convertir
-2. Configura voz opcional y velocidad
-3. Haz clic en "Generar Voz"
-4. Reproduce o descarga el audio
-
-### 2. Timeline
-1. Agrega elementos a la timeline
-2. Configura URL, duración y efectos
-3. Agrega audio y texto SRT opcional
-4. Compose el video
-
-### 3. Storyboard
-1. Crea prompts para cada escena
-2. Configura calidad y semillas
-3. Genera el lote de imágenes
-4. Descarga los resultados
-
-### 4. Lotes
-1. Crea un nuevo lote
-2. Importa datos CSV o agrega manualmente
-3. Configura modelo y aspect ratio
-4. Inicia el procesamiento
-
-### 5. Jobs
-1. Visualiza todos los trabajos activos
-2. Filtra por estado o tipo
-3. Activa auto-refresh
-4. Descarga resultados
-
-### 6. Nuevo Job
-1. Selecciona una plantilla o crea personalizada
-2. Configura los pasos del flujo
-3. Ejecuta el trabajo automatizado
-4. Monitorea el progreso
-
-## Variables de Entorno
-
-- `NEXT_PUBLIC_API_URL`: URL del backend API
-- `NEXT_PUBLIC_API_KEY`: Clave API para autenticación
-- `NODE_ENV`: Entorno (development/production)
-
-## Dependencias Principales
-
-- **next**: 14.0.0
-- **react**: ^18.2.0
-- **typescript**: ^5.2.0
-- **axios**: ^1.6.0
-- **tailwindcss**: ^3.3.0
-- **lucide-react**: ^0.292.0
-
-## Desarrollo
-
-### Scripts Disponibles
-
-- `npm run dev`: Servidor de desarrollo
-- `npm run build`: Build para producción
-- `npm run start`: Servidor de producción
-- `npm run lint`: Linter de código
-
-### Buenas Prácticas
-
-1. **Tipado estricto**: Todo el código está tipado con TypeScript
-2. **Manejo de errores**: Todas las llamadas API tienen manejo de errores
-3. **Feedback visual**: Indicadores de carga y progreso
-4. **Responsive design**: Adaptable a diferentes tamaños de pantalla
-5. **Accessibility**: Estructura semántica y navegación por teclado
-
-## Despliegue
-
-Para desplegar en producción:
-
-1. Build del proyecto:
 ```bash
-npm run build
+docker compose up -d --build
 ```
 
-2. Variables de entorno de producción:
-```
-NEXT_PUBLIC_API_URL=https://tu-backend.com
-NEXT_PUBLIC_API_KEY=tu-production-key
-```
+### View Logs
 
-3. Start del servidor:
 ```bash
-npm start
+docker logs genscene-backend -f
 ```
 
-## Contribuciones
+### Health Check
 
-1. Fork del repositorio
-2. Crear rama de características
-3. Commit con cambios descriptivos
-4. Pull request al main
+```bash
+curl http://localhost:8000/health
+```
 
-## Licencia
+---
 
-MIT License - ver archivo LICENSE para detalles
+## 📊 API Usage Example
+
+### Create a Video
+
+```bash
+curl -X POST "https://api.genscenestudio.com/api/quick-create-full-universe" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your_api_key" \
+  -d '{
+    "idea_text": "A dragon flying over a medieval castle at sunset",
+    "duration": "30s",
+    "style_key": "cinematic_realism",
+    "auto_create_universe": true
+  }'
+```
+
+### Response
+
+```json
+{
+  "job_id": "qcf-abc12345",
+  "episode_id": "ep-def67890",
+  "status": "queued",
+  "estimated_time_sec": 90,
+  "message": "Full universe creation queued. Model: bytedance/v1-pro-text-to-video"
+}
+```
+
+### Check Job Status
+
+```bash
+curl "https://api.genscenestudio.com/api/status?job_id=qcf-abc12345" \
+  -H "X-API-Key: your_api_key"
+```
+
+---
+
+## 🛡️ Security
+
+- API Key authentication on all protected endpoints
+- Rate limiting (60 requests/minute)
+- CORS configured for allowed origins
+- Input validation with Pydantic
+
+---
+
+## 📈 Performance
+
+- Async I/O with asyncio
+- Concurrent worker pool (configurable)
+- Connection pooling for database
+- Efficient video encoding with FFmpeg
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is proprietary software. All rights reserved.
+
+---
+
+## 👨‍💻 Author
+
+**JuanFer85**
+
+- GitHub: [@Juanfer85](https://github.com/Juanfer85)
+
+---
+
+<p align="center">
+  <strong>🎬 Create. Generate. Dominate.</strong>
+</p>
+
+<p align="center">
+  Made with ❤️ and AI
+</p>

@@ -1,0 +1,47 @@
+# ============================================
+# Gen Scene Studio Backend - Requirements
+# ============================================
+
+# Core Framework
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+
+# HTTP Client
+httpx==0.27.2
+aiohttp==3.11.10
+
+# Data Validation and Settings
+pydantic==2.9.2
+pydantic-settings==2.6.1
+
+# File Upload
+python-multipart==0.0.9
+
+# Retry Logic
+tenacity==9.0.0
+
+# Image Processing
+Pillow==10.2.0
+
+# Video Processing
+ffmpeg-python==0.2.0
+
+# Numerical Computing
+numpy==1.26.2
+
+# Environment Variables
+python-dotenv==1.0.0
+
+# Production Logging
+structlog==23.2.0
+
+# JWT for authentication
+PyJWT[crypto]
+
+# Database (optional - for memory mode, SQLite is built-in)
+# sqlalchemy==2.0.23
+
+# Testing (optional)
+# pytest==7.4.3
+# pytest-asyncio==0.21.1
+# pytest-cov==4.1.0
