@@ -1,0 +1,318 @@
+{
+    "version": "1.0",
+    "description": "Voice library organized by video style",
+    "default_provider": "edge",
+    "styles": {
+        "cinematic_realism": {
+            "name": "Cinematic Realism",
+            "description": "Epic documentary and cinematic narration",
+            "default_voice": "en-US-GuyNeural",
+            "voices": [
+                {
+                    "id": "en-US-GuyNeural",
+                    "name": "Guy (Epic Narrator)",
+                    "gender": "male",
+                    "locale": "en-US",
+                    "age": "mature",
+                    "tone": "deep, authoritative, cinematic",
+                    "provider": "edge",
+                    "use_cases": [
+                        "documentary",
+                        "epic trailer",
+                        "nature films"
+                    ]
+                },
+                {
+                    "id": "en-GB-RyanNeural",
+                    "name": "Ryan (British Documentary)",
+                    "gender": "male",
+                    "locale": "en-GB",
+                    "age": "mature",
+                    "tone": "wise, calm, educational",
+                    "provider": "edge",
+                    "use_cases": [
+                        "documentary",
+                        "nature",
+                        "history"
+                    ]
+                },
+                {
+                    "id": "en-US-DavisNeural",
+                    "name": "Davis (Professional)",
+                    "gender": "male",
+                    "locale": "en-US",
+                    "age": "adult",
+                    "tone": "professional, confident, clear",
+                    "provider": "edge",
+                    "use_cases": [
+                        "corporate",
+                        "professional",
+                        "news"
+                    ]
+                }
+            ]
+        },
+        "cyberpunk": {
+            "name": "Cyberpunk",
+            "description": "Futuristic and tech-focused narration",
+            "default_voice": "en-US-AriaNeural",
+            "voices": [
+                {
+                    "id": "en-US-AriaNeural",
+                    "name": "Aria (AI Assistant)",
+                    "gender": "female",
+                    "locale": "en-US",
+                    "age": "young",
+                    "tone": "friendly, tech-savvy, modern",
+                    "provider": "edge",
+                    "use_cases": [
+                        "tech",
+                        "AI",
+                        "futuristic"
+                    ]
+                },
+                {
+                    "id": "en-US-TonyNeural",
+                    "name": "Tony (Cyber Narrator)",
+                    "gender": "male",
+                    "locale": "en-US",
+                    "age": "adult",
+                    "tone": "edgy, mysterious, tech",
+                    "provider": "edge",
+                    "use_cases": [
+                        "hacker",
+                        "cyberpunk",
+                        "tech noir"
+                    ]
+                },
+                {
+                    "id": "en-US-JennyNeural",
+                    "name": "Jenny (Digital Voice)",
+                    "gender": "female",
+                    "locale": "en-US",
+                    "age": "young",
+                    "tone": "warm, conversational, friendly",
+                    "provider": "edge",
+                    "use_cases": [
+                        "tutorial",
+                        "explainer",
+                        "friendly AI"
+                    ]
+                }
+            ]
+        },
+        "fantasy_adventure": {
+            "name": "Fantasy Adventure",
+            "description": "Magical storytelling and adventure",
+            "default_voice": "en-GB-RyanNeural",
+            "voices": [
+                {
+                    "id": "en-GB-RyanNeural",
+                    "name": "Ryan (Storyteller)",
+                    "gender": "male",
+                    "locale": "en-GB",
+                    "age": "mature",
+                    "tone": "warm, magical, enchanting",
+                    "provider": "edge",
+                    "use_cases": [
+                        "fairy tales",
+                        "fantasy",
+                        "storytelling"
+                    ]
+                },
+                {
+                    "id": "en-US-SaraNeural",
+                    "name": "Sara (Fairy Voice)",
+                    "gender": "female",
+                    "locale": "en-US",
+                    "age": "young",
+                    "tone": "whimsical, light, playful",
+                    "provider": "edge",
+                    "use_cases": [
+                        "fantasy",
+                        "children",
+                        "magical"
+                    ]
+                },
+                {
+                    "id": "en-GB-ThomasNeural",
+                    "name": "Thomas (Wizard)",
+                    "gender": "male",
+                    "locale": "en-GB",
+                    "age": "senior",
+                    "tone": "wise, mystical, powerful",
+                    "provider": "edge",
+                    "use_cases": [
+                        "wizard",
+                        "sage",
+                        "mentor"
+                    ]
+                }
+            ]
+        },
+        "motivational": {
+            "name": "Motivational",
+            "description": "Inspiring and energetic narration",
+            "default_voice": "en-US-GuyNeural",
+            "voices": [
+                {
+                    "id": "en-US-GuyNeural",
+                    "name": "Guy (Coach)",
+                    "gender": "male",
+                    "locale": "en-US",
+                    "age": "adult",
+                    "tone": "energetic, inspiring, powerful",
+                    "provider": "edge",
+                    "use_cases": [
+                        "motivation",
+                        "fitness",
+                        "coaching"
+                    ]
+                },
+                {
+                    "id": "en-US-JennyNeural",
+                    "name": "Jenny (Motivational Speaker)",
+                    "gender": "female",
+                    "locale": "en-US",
+                    "age": "adult",
+                    "tone": "uplifting, confident, dynamic",
+                    "provider": "edge",
+                    "use_cases": [
+                        "inspiration",
+                        "empowerment",
+                        "success"
+                    ]
+                }
+            ]
+        },
+        "educational": {
+            "name": "Educational",
+            "description": "Clear and informative teaching voice",
+            "default_voice": "en-US-DavisNeural",
+            "voices": [
+                {
+                    "id": "en-US-DavisNeural",
+                    "name": "Davis (Professor)",
+                    "gender": "male",
+                    "locale": "en-US",
+                    "age": "mature",
+                    "tone": "clear, informative, friendly",
+                    "provider": "edge",
+                    "use_cases": [
+                        "education",
+                        "tutorial",
+                        "explainer"
+                    ]
+                },
+                {
+                    "id": "en-US-JennyNeural",
+                    "name": "Jenny (Teacher)",
+                    "gender": "female",
+                    "locale": "en-US",
+                    "age": "adult",
+                    "tone": "patient, warm, encouraging",
+                    "provider": "edge",
+                    "use_cases": [
+                        "teaching",
+                        "learning",
+                        "instruction"
+                    ]
+                }
+            ]
+        },
+        "horror": {
+            "name": "Horror",
+            "description": "Dark and ominous narration",
+            "default_voice": "en-US-GuyNeural",
+            "voices": [
+                {
+                    "id": "en-US-GuyNeural",
+                    "name": "Guy (Creepy Narrator)",
+                    "gender": "male",
+                    "locale": "en-US",
+                    "age": "adult",
+                    "tone": "dark, ominous, unsettling",
+                    "provider": "edge",
+                    "use_cases": [
+                        "horror",
+                        "thriller",
+                        "suspense"
+                    ]
+                },
+                {
+                    "id": "en-US-SaraNeural",
+                    "name": "Sara (Whisper)",
+                    "gender": "female",
+                    "locale": "en-US",
+                    "age": "young",
+                    "tone": "whispering, eerie, haunting",
+                    "provider": "edge",
+                    "use_cases": [
+                        "horror",
+                        "mystery",
+                        "supernatural"
+                    ]
+                }
+            ]
+        },
+        "default": {
+            "name": "Default",
+            "description": "General purpose voices",
+            "default_voice": "en-US-GuyNeural",
+            "voices": [
+                {
+                    "id": "en-US-GuyNeural",
+                    "name": "Guy (Narrator)",
+                    "gender": "male",
+                    "locale": "en-US",
+                    "age": "adult",
+                    "tone": "neutral, professional",
+                    "provider": "edge",
+                    "use_cases": [
+                        "general",
+                        "narration"
+                    ]
+                },
+                {
+                    "id": "en-US-JennyNeural",
+                    "name": "Jenny (Narrator)",
+                    "gender": "female",
+                    "locale": "en-US",
+                    "age": "adult",
+                    "tone": "neutral, friendly",
+                    "provider": "edge",
+                    "use_cases": [
+                        "general",
+                        "narration"
+                    ]
+                }
+            ]
+        }
+    },
+    "spanish_voices": {
+        "es-ES-AlvaroNeural": {
+            "name": "Álvaro (España)",
+            "gender": "male",
+            "locale": "es-ES",
+            "tone": "neutral, profesional"
+        },
+        "es-ES-ElviraNeural": {
+            "name": "Elvira (España)",
+            "gender": "female",
+            "locale": "es-ES",
+            "tone": "cálida, amigable"
+        },
+        "es-MX-DaliaNeural": {
+            "name": "Dalia (México)",
+            "gender": "female",
+            "locale": "es-MX",
+            "tone": "joven, energética"
+        },
+        "es-MX-JorgeNeural": {
+            "name": "Jorge (México)",
+            "gender": "male",
+            "locale": "es-MX",
+            "tone": "profesional, claro"
+        }
+    }
+}
