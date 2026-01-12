@@ -89,7 +89,9 @@ class SecurityMiddleware:
 
         request = Request(scope, receive)
 
-        if request.url.path.startswith("/health") or request.url.path.startswith("/api/"):
+        # Rutas públicas que NO requieren autenticación
+        public_paths = ["/health", "/api/", "/files/"]
+        if any(request.url.path.startswith(path) for path in public_paths):
             await self.app(scope, receive, send)
             return
 
