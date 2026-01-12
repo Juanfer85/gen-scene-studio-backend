@@ -640,7 +640,7 @@ class EnterpriseJobManager:
                 cmd_smart_crop = [
                     "ffmpeg", "-y",
                     "-i", str(image_path),
-                    "-vf", f"scale=-1:{height},crop={width}:{height}", 
+                    "-vf", "scale=-1:1280,crop=720:1280", # FORCE 9:16 Vertical
                     str(temp_crop_path)
                 ]
                 
