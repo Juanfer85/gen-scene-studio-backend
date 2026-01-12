@@ -21,7 +21,8 @@ async def generate_image(*, prompt:str, negative:str, seed:int, aspect_ratio:str
         }
 
         payload = {
-            "prompt": prompt
+            "prompt": prompt,
+            "aspectRatio": aspect_ratio  # Pass aspect ratio (e.g. "9:16")
         }
 
         timeout = aiohttp.ClientTimeout(total=15)  # Shorter timeout
