@@ -29,7 +29,7 @@ COPY . .
 RUN mkdir -p /app/media && chmod 755 /app/media
 
 # Set environment variables
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app/src
 ENV PYTHONUNBUFFERED=1
 ENV MEDIA_DIR=/app/media
 ENV DATABASE_URL=sqlite:///./data/genscene.db
