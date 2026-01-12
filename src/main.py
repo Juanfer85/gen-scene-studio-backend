@@ -338,6 +338,17 @@ def get_job_status_path(job_id: str):
 
 
 # NEW ENDPOINT 2: Jobs Hub (for frontend Jobs Hub page)
+# NEW ENDPOINT 3: Credits Balance (Mock for frontend)
+@app.get("/api/credits/balance")
+def get_credits_balance():
+    """Get user credit balance - Mocked for MVP"""
+    return {
+        "balance": 9999,
+        "subscription_plan": "unlimited",
+        "currency": "credits"
+    }
+
+@app.get("/api/jobs-hub")
 @app.get("/api/jobs-hub")
 def get_jobs_hub():
     """Get all jobs for Jobs Hub frontend - includes quick-create-full-universe jobs"""
