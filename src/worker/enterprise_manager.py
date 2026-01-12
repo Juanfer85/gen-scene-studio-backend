@@ -12,9 +12,18 @@ from models.dao import upsert_job
 import subprocess
 import aiohttp
 try:
-    from services.kie_client import get_kie_client
+    from services.kie_client import generate_image as kie_generate_image
+    KIE_AVAILABLE = True
 except ImportError:
-    get_kie_client = None
+    kie_generate_image = None
+    KIE_AVAILABLE = False
+
+try:
+    from services.kie_unified_video_client import generate_video as kie_generate_video
+    VIDEO_AVAILABLE = True
+except ImportError:
+    kie_generate_video = None
+    VIDEO_AVAILABLE = False
 
 log = logging.getLogger(__name__)
 
@@ -23,54 +32,53 @@ log = logging.getLogger(__name__)
 # =============================================================================
 
 # Mapeo de estilos a modelos de video por defecto
-# ESTRATEGIA: Usar modelos económicos por defecto, premium solo cuando es necesario
-# Bytedance v1 (150 créditos) como default - buen balance calidad/precio
+# ESTRATEGIA: Usar Wan 2.6 (60 créditos) como default - MÁS ECONÓMICO
+# Premium solo cuando es necesario
 STYLE_TO_MODEL = {
     # ===== ESTILOS QUE REQUIEREN PREMIUM (solo estos) =====
     # Máxima calidad para proyectos profesionales
-    "photorealistic": "veo3",                 # Requiere máxima calidad
-    "realistic": "runway-gen3",               # Alta fidelidad visual
+    "photorealistic": "runway-gen3",           # Alta fidelidad visual (200 créditos)
+    "realistic": "runway-gen3",                # Alta fidelidad visual
     
-    # Narrativa compleja (necesita Sora)
-    "fantasy_epic": "sora-2-pro-text-to-video",
-    "epic": "sora-2-pro-text-to-video",
+    # Narrativa compleja
+    "fantasy_epic": "runway-gen3",
+    "epic": "runway-gen3",
     
-    # ===== ESTILOS CON MODELOS ESPECIALIZADOS =====
-    # Anime/Artístico - Kling tiene mejor control artístico
-    "anime_style": "kling/v2-1-pro",
-    "anime": "kling/v2-1-pro",
-    "stylized": "kling/v2-1-pro",
+    # ===== TODOS LOS DEMÁS → WAN 2.6 (MÁS ECONÓMICO: 60 créditos/5s) =====
+    # Anime/Artístico
+    "anime_style": "wan/2-6-text-to-video",
+    "anime": "wan/2-6-text-to-video",
+    "stylized": "wan/2-6-text-to-video",
     
-    # ===== TODOS LOS DEMÁS → ECONÓMICOS =====
-    # Cinematográfico general → Bytedance (buen balance)
-    "cinematic_realism": "bytedance/v1-pro-text-to-video",
-    "cinematic": "bytedance/v1-pro-text-to-video",
-    "documentary": "bytedance/v1-pro-text-to-video",
+    # Cinematográfico general
+    "cinematic_realism": "wan/2-6-text-to-video",
+    "cinematic": "wan/2-6-text-to-video",
+    "documentary": "wan/2-6-text-to-video",
     
-    # Artístico → Hailuo (especializado)
-    "artistic": "hailuo/2-3-image-to-video-pro",
+    # Artístico
+    "artistic": "wan/2-6-text-to-video",
     
-    # Fantasía simple → Bytedance
-    "fantasy": "bytedance/v1-pro-text-to-video",
-    "dramatic": "bytedance/v1-pro-text-to-video",
+    # Fantasía simple
+    "fantasy": "wan/2-6-text-to-video",
+    "dramatic": "wan/2-6-text-to-video",
     
-    # Minimalista/Rápido → Wan Turbo (el más barato)
-    "minimalist": "wan/2-2-a14b-text-to-video-turbo",
-    "simple": "wan/2-2-a14b-text-to-video-turbo",
-    "fast": "wan/2-2-a14b-text-to-video-turbo",
+    # Minimalista/Rápido
+    "minimalist": "wan/2-6-text-to-video",
+    "simple": "wan/2-6-text-to-video",
+    "fast": "wan/2-6-text-to-video",
     
-    # Social media → Bytedance (optimizado para esto)
-    "social_media": "bytedance/v1-pro-text-to-video",
-    "tiktok": "bytedance/v1-pro-text-to-video",
-    "reels": "bytedance/v1-pro-text-to-video",
-    "shorts": "bytedance/v1-pro-text-to-video",
+    # Social media
+    "social_media": "wan/2-6-text-to-video",
+    "tiktok": "wan/2-6-text-to-video",
+    "reels": "wan/2-6-text-to-video",
+    "shorts": "wan/2-6-text-to-video",
     
-    # Vintage/Retro → Bytedance
-    "vintage": "bytedance/v1-pro-text-to-video",
-    "retro": "bytedance/v1-pro-text-to-video",
+    # Vintage/Retro
+    "vintage": "wan/2-6-text-to-video",
+    "retro": "wan/2-6-text-to-video",
     
-    # Default → Bytedance (económico pero bueno)
-    "default": "bytedance/v1-pro-text-to-video"
+    # Default → Wan 2.6 (MÁS ECONÓMICO)
+    "default": "wan/2-6-text-to-video"
 }
 
 # Información de modelos disponibles para el frontend
@@ -128,6 +136,15 @@ VIDEO_MODELS_INFO = {
         "max_duration": 5,
         "features": ["text-to-video", "camera-control"],
         "description": "Optimizado para social media"
+    },
+    "wan/2-6-text-to-video": {
+        "id": "wan/2-6-text-to-video",
+        "name": "Wan 2.6",
+        "tier": "economic",
+        "credits_5s": 60,
+        "max_duration": 10,
+        "features": ["text-to-video", "high-quality"],
+        "description": "Excelente balance calidad/costo"
     },
     "wan/2-2-a14b-text-to-video-turbo": {
         "id": "wan/2-2-a14b-text-to-video-turbo",
@@ -289,6 +306,55 @@ class EnterpriseJobManager:
             else:
                 job_id = f"{raw_uuid[:12]}"
 
+        # =========================================================================
+        # CREDITS SYSTEM: VALIDATION AND DEDUCTION
+        # =========================================================================
+        try:
+            # Default user if not specified (for now, until auth is fully implemented)
+            user_id = payload.get("user_id", "default_user")
+            payload["user_id"] = user_id
+            
+            from services.credits_calculator import calculate_job_cost
+            from repositories.credits_repository import CreditsRepository
+            
+            # Calculate estimated cost
+            job_cost = calculate_job_cost(job_type, payload)
+            
+            if job_cost > 0:
+                conn = get_conn()
+                credits_repo = CreditsRepository(conn)
+                
+                # Attempt to deduct credits
+                idea_text = payload.get('request', {}).get('idea_text', '') or payload.get('idea_text', 'No description')
+                description = f"Job {job_type}: {str(idea_text)[:40]}"
+                
+                success, message = credits_repo.deduct_credits(
+                    user_id=user_id,
+                    amount=job_cost,
+                    job_id=job_id,
+                    description=description
+                )
+                
+                conn.close()
+                
+                if not success:
+                    log.warning(f"❌ Insufficient credits for user {user_id}: {message}")
+                    raise ValueError(f"Insufficient credits: {message}")
+                
+                log.info(f"💰 Deducted {job_cost} credits for user {user_id} (Job: {job_id})")
+                
+                # Store cost in payload for reference
+                payload["credits_cost"] = job_cost
+            
+        except ImportError:
+             log.warning("⚠️ Credits system modules not found, skipping validation")
+        except ValueError as ve:
+             raise ve
+        except Exception as e:
+             log.error(f"⚠️ Error in credits validation: {e}")
+             # We allow the job to proceed if it's a system error, but log it.
+             # Ideally we should probably fail safe, but for now specific ValueError handles the balance check.
+
         job = EnterpriseJob(job_id, job_type, payload)
         
         # Store in memory
@@ -413,6 +479,34 @@ class EnterpriseJobManager:
 
             log.error(f"❌ Worker {worker_id} failed job {job.job_id}: {e}")
 
+            # =====================================================================
+            # AUTOMATIC REFUND ON FAILURE
+            # =====================================================================
+            try:
+                credits_cost = job.payload.get("credits_cost", 0)
+                user_id = job.payload.get("user_id")
+                
+                if credits_cost > 0 and user_id:
+                    log.info(f"💸 Refunding {credits_cost} credits to {user_id} due to job failure")
+                    
+                    # We need to import here to avoid circular dependencies if possible or ensure availability
+                    from repositories.credits_repository import CreditsRepository
+                    
+                    conn = get_conn()
+                    repo = CreditsRepository(conn)
+                    
+                    repo.add_credits(
+                        user_id=user_id,
+                        amount=credits_cost,
+                        transaction_type="refund",
+                        description=f"Refund for failed job {job.job_id}: {str(e)[:50]}"
+                    )
+                    conn.close()
+                    log.info(f"✅ Refund processed successfully for {job.job_id}")
+                    
+            except Exception as refund_error:
+                log.error(f"❌ Failed to process refund for job {job.job_id}: {refund_error}")
+
         finally:
             # Store final job state
             self._jobs[job.job_id] = job
@@ -493,54 +587,198 @@ class EnterpriseJobManager:
         self._save_job_state(job) # Helper to update DB
         
         image_path = media_dir / "concept.jpg"
+        # Preserve image URL for video generation
+        concept_image_url = None
         
         try:
-            if get_kie_client:
+            if KIE_AVAILABLE:
                 log.info(f"🎨 Requesting AI Image for: {idea} ({width}x{height})")
-                client = await get_kie_client()
-                image_url = await client.generate_image(prompt=f"Cinematic shot, masterpiece: {idea}", width=width, height=height)
+                concept_image_url = await kie_generate_image(
+                    prompt=f"Cinematic shot, masterpiece: {idea}",
+                    negative="",
+                    seed=42,
+                    aspect_ratio=aspect_ratio,
+                    quality=video_quality,
+                    model="gpt4o"
+                )
                 
                 # Download image
                 async with aiohttp.ClientSession() as session:
-                    async with session.get(image_url) as resp:
+                    async with session.get(concept_image_url) as resp:
                         if resp.status == 200:
                             with open(image_path, 'wb') as f:
                                 f.write(await resp.read())
                             log.info(f"⬇️ Image downloaded to {image_path}")
+                            log.info(f"🔗 Image URL preserved for video generation: {concept_image_url[:50]}...")
                         else:
                             raise Exception("Failed to download generated image")
             else:
-                raise Exception("Kie Client not available")
+                raise Exception("KIE_AVAILABLE is False")
                 
         except Exception as e:
             log.error(f"⚠️ AI Generation failed: {e}. Using fallback.")
             # Create a simple colored image as fallback
             subprocess.run(["ffmpeg", "-y", "-f", "lavfi", "-i", f"color=c=blue:s={width}x{height}:d=0.1", "-frames:v", "1", str(image_path)], check=False)
 
-        # Phase 2: Video Encoding
+        # Phase 1.5: Normalize Image for Vertical Video (CRITICAL FIX)
+        # Force crop to ensure 9:16 if requested, preventing horizontal images in vertical video
+        if aspect_ratio == "9:16" and image_path.exists():
+            try:
+                log.info(f"📐 Enforcing 9:16 Aspect Ratio ({width}x{height}) on source image...")
+                temp_crop_path = media_dir / "concept_cropped.jpg"
+                
+                # force 720:1280 crop from center
+                cmd_crop = [
+                    "ffmpeg", "-y",
+                    "-i", str(image_path),
+                    "-vf", f"scale=1280:720,crop={width}:{height}", # Ensure enough resolution then crop
+                    str(temp_crop_path)
+                ]
+                
+                # Alternative safer crop: scale to cover
+                # scale=-1:1280 (height 1280, width auto) -> crop 720:1280
+                cmd_smart_crop = [
+                    "ffmpeg", "-y",
+                    "-i", str(image_path),
+                    "-vf", f"scale=-1:{height},crop={width}:{height}", 
+                    str(temp_crop_path)
+                ]
+                
+                process = await asyncio.create_subprocess_exec(*cmd_smart_crop, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+                await process.communicate()
+                
+                if temp_crop_path.exists() and temp_crop_path.stat().st_size > 0:
+                    os.replace(temp_crop_path, image_path)
+                    log.info("✅ Image successfully transformed to 9:16 vertical format")
+            except Exception as e:
+                log.error(f"❌ Failed to crop image: {e}")
+
+        # Phase 2: AI Video Generation
         job.progress = 50
-        job.metadata["current_phase"] = "🎬 Rendering video from AI dream..."
+        job.metadata["current_phase"] = "🎬 Generating AI video with motion..."
         self._save_job_state(job)
         
         output_path = media_dir / "universe_complete.mp4"
+        video_generated = False
         
-        # Create video from image (loop 30s)
+        # Try AI video generation first
         try:
-            cmd = [
-                "ffmpeg", "-y",
-                "-loop", "1", "-i", str(image_path),
-                "-c:v", "libx264", "-t", "30", "-pix_fmt", "yuv420p",
-                "-vf", f"scale={width}:{height}",
-                str(output_path)
-            ]
-            process = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-            await process.communicate()
-            
-            log.info(f"📼 Video rendered at {output_path}")
-            
+            if VIDEO_AVAILABLE and concept_image_url:  # Use image-to-video if we have the image
+                # KIE.ai Wan 2.6 only supports 5s or 10s blocks
+                final_duration = 5
+                if video_duration > 5:
+                    final_duration = 10
+                
+                log.info(f"🎬 Generating AI video from image (Duration: {final_duration}s)...")
+                video_url = await kie_generate_video(
+                    prompt=f"Cinematic motion, slow camera movement: {idea}",
+                    model=selected_model,
+                    duration=final_duration,
+                    quality=video_quality,
+                    aspect_ratio=aspect_ratio,
+                    image_url=concept_image_url  # Use the generated image URL
+                )
+                
+                if video_url:
+                    # Download video
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(video_url) as resp:
+                            if resp.status == 200:
+                                with open(output_path, 'wb') as f:
+                                    f.write(await resp.read())
+                                log.info(f"✅ AI Video downloaded to {output_path}")
+                                video_generated = True
+                                job.metadata["video_source"] = "ai_generated"
+                            else:
+                                log.warning(f"⚠️ Failed to download video: {resp.status}")
+                else:
+                    log.warning("⚠️ AI Video generation returned no URL")
+            else:
+                log.info("⚠️ VIDEO_AVAILABLE is False or no image_url")
+                
         except Exception as e:
-            log.error(f"❌ FFmpeg failed: {e}")
+            log.error(f"⚠️ AI Video generation failed: {e}")
+        
+        # Fallback: Create video from image (loop)
+        if not video_generated:
+            log.info("📼 Using fallback: Creating video from image loop...")
+            job.metadata["video_source"] = "image_loop_fallback"
+            try:
+                cmd = [
+                    "ffmpeg", "-y",
+                    "-loop", "1", "-i", str(image_path),
+                    "-c:v", "libx264", "-t", "30", "-pix_fmt", "yuv420p",
+                    "-vf", f"scale={width}:{height}",
+                    str(output_path)
+                ]
+                process = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+                await process.communicate()
+                log.info(f"📼 Fallback video rendered at {output_path}")
+            except Exception as e:
+                log.error(f"❌ FFmpeg failed: {e}")
 
+        # Phase 3: Audio & Finalizing (Music Mixing)
+        job.progress = 80
+        job.metadata["current_phase"] = "🎵 Adding soundtrack..."
+        self._save_job_state(job)
+        
+        final_output_path = media_dir / "universe_final.mp4"
+        
+        # Audio Styles Mapping (Royalty Free Placeholders)
+        AUDIO_MAPPING = {
+            "cinematic_realism": "https://cdn.pixabay.com/download/audio/2022/03/24/audio_c8c8a73467.mp3", # Cyberpunk/SciFi vibe
+            "documentary": "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3", # Epic Cinematic
+            "anime_style": "https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3", # Fantasy/Dreamy
+            "default": "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3"
+        }
+        
+        audio_url = AUDIO_MAPPING.get(style_key, AUDIO_MAPPING["default"])
+        audio_path = media_dir / "soundtrack.mp3"
+        
+        has_audio = False
+        try:
+            log.info(f"🎵 Downloading audio for style '{style_key}': {audio_url}")
+            async with aiohttp.ClientSession() as session:
+                async with session.get(audio_url) as resp:
+                    if resp.status == 200:
+                        with open(audio_path, 'wb') as f:
+                            f.write(await resp.read())
+                        has_audio = True
+                    else:
+                        log.warning(f"⚠️ Failed to download audio: {resp.status}")
+        except Exception as e:
+            log.warning(f"⚠️ Audio download failed: {e}")
+
+        # Mix Audio with Video
+        if has_audio and os.path.exists(output_path):
+            try:
+                log.info("🎛️ Mixing audio and video...")
+                # Mix video (output_path) + audio (audio_path) -> final_output_path
+                # -shortest: cuts audio to video length
+                # -map 0:v -map 1:a: use video from 0 and audio from 1
+                cmd = [
+                    "ffmpeg", "-y",
+                    "-i", str(output_path),
+                    "-i", str(audio_path),
+                    "-map", "0:v", "-map", "1:a",
+                    "-c:v", "copy",
+                    "-c:a", "aac", "-b:a", "192k",
+                    "-shortest",
+                    str(final_output_path)
+                ]
+                
+                process = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+                await process.communicate()
+                
+                # Verify success
+                if final_output_path.exists() and final_output_path.stat().st_size > 0:
+                    log.info(f"✅ Audio mix successful: {final_output_path}")
+                    # Replace origin output with final version for the user
+                    os.replace(final_output_path, output_path) 
+            except Exception as e:
+                log.error(f"❌ Audio mix failed: {e}")
+        
+        
         # Set universe metadata
         job.metadata.update({
             "character_id": character_id,
