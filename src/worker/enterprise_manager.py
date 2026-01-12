@@ -664,11 +664,12 @@ class EnterpriseJobManager:
         # Try AI video generation first
         try:
             if VIDEO_AVAILABLE and concept_image_url:  # Use image-to-video if we have the image
-                # KIE.ai Wan 2.6 only supports 5s or 10s blocks
+                # KIE.ai Wan 2.6 only supports 5s or 10s blocks. Force 5s to save credits.
                 final_duration = 5
-                if video_duration > 5:
-                    final_duration = 10
+                # if video_duration > 5:
+                #    final_duration = 10
                 
+                log.info(f"🎬 DEBUG: Calling kie_generate_video with model={selected_model}, duration={final_duration}, url={concept_image_url[:20]}...")
                 log.info(f"🎬 Generating AI video from image (Duration: {final_duration}s)...")
                 video_url = await kie_generate_video(
                     prompt=f"Cinematic motion, slow camera movement: {idea}",
