@@ -280,7 +280,7 @@ def get_recommended_model_endpoint(style_key: str):
 
 # NEW ENDPOINT 1: Status with query parameter (for frontend compatibility)
 @app.get("/api/status")
-def get_job_status_query(job_id: str = Query(..., description="Job ID to check"), _k=Depends(require_api_key)):
+def get_job_status_query(job_id: str = Query(..., description="Job ID to check")):
     """Get job status using query parameter - compatible with frontend"""
     try:
         conn = get_conn()
@@ -331,10 +331,10 @@ def get_job_status_query(job_id: str = Query(..., description="Job ID to check")
 
 # NEW ENDPOINT 1B: Status with path parameter (REST-compliant)
 @app.get("/api/status/{job_id}")
-def get_job_status_path(job_id: str, _k=Depends(require_api_key)):
+def get_job_status_path(job_id: str):
     """Get job status using path parameter - REST-compliant endpoint"""
     # Reuse the same logic as query parameter version
-    return get_job_status_query(job_id=job_id, _k=_k)
+    return get_job_status_query(job_id=job_id)
 
 
 # NEW ENDPOINT 2: Jobs Hub (for frontend Jobs Hub page)
@@ -399,7 +399,7 @@ def get_jobs_hub():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/quick-create-full-universe", response_model=QuickCreateResponse)
-async def quick_create_full_universe(request: QuickCreateRequest, _api_key=Depends(require_api_key)):
+async def quick_create_full_universe(request: QuickCreateRequest):
     try:
         job_id = f"qcf-{uuid.uuid4().hex[:12]}"
         episode_id = f"ep-{uuid.uuid4().hex[:8]}"
