@@ -351,7 +351,7 @@ def get_job_status_path(job_id: str, _k=Depends(require_api_key)):
 
 # NEW ENDPOINT 2: Jobs Hub (for frontend Jobs Hub page)
 @app.get("/api/jobs-hub")
-def get_jobs_hub(_k=Depends(require_api_key)):
+def get_jobs_hub():
     """Get all jobs for Jobs Hub frontend - includes quick-create-full-universe jobs"""
     try:
         conn = get_conn()
