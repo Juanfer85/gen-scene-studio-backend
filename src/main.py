@@ -6,7 +6,7 @@ import uuid
 import subprocess
 import hmac
 import hashlib
-from contextlib import asynccontextmanager
+# from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Dict, Any, Optional
 from fastapi import FastAPI, HTTPException, Request, Header, Depends, Query
@@ -107,19 +107,19 @@ class SecurityMiddleware:
 log = setup_logging()
 
 # Create lifespan context manager
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup
-    log.info("🚀 Initializing Enterprise Job Manager...")
+app = FastAPI(title="Gen Scene Studio Backend", version="0.2.0")
+
+@app.on_event("startup")
+async def startup_event():
+    log.info("🚀 Initializing Enterprise Job Manager (startup event)...")
     await enterprise_job_manager.initialize()
     await enterprise_job_manager.start_workers(num_workers=4)
     log.info("✅ Enterprise Job Manager started with 4 workers")
-    yield
-    # Shutdown
-    log.info("🔌 Shutting down Enterprise Job Manager...")
-    await enterprise_job_manager.close()
 
-app = FastAPI(title="Gen Scene Studio Backend", version="0.2.0", lifespan=lifespan)
+@app.on_event("shutdown")
+async def shutdown_event():
+    log.info("🔌 Shutting down Enterprise Job Manager (shutdown event)...")
+    await enterprise_job_manager.close()
 
 # ALLOWED_ORIGINS = [
 #     "https://app.genscenestudio.com",
