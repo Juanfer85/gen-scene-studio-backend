@@ -83,6 +83,10 @@ class SecurityMiddleware:
         self.app = app
 
     async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
         request = Request(scope, receive)
 
         if request.url.path.startswith("/health") or request.url.path.startswith("/api/"):
