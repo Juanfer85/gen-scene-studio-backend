@@ -679,7 +679,7 @@ class EnterpriseJobManager:
                 cmd = [
                     "ffmpeg", "-y",
                     "-loop", "1", "-i", str(image_path),
-                    "-c:v", "libx264", "-t", "30", "-pix_fmt", "yuv420p",
+                    "-c:v", "libx264", "-t", "5", "-pix_fmt", "yuv420p",
                     "-vf", f"scale={width}:{height}",
                     str(output_path)
                 ]
