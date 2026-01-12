@@ -21,50 +21,15 @@ class Settings(BaseSettings):
     DEBUG: bool = Field(default=False, env="DEBUG")
 
     # API Configuration
-    KIE_API_KEY: str = Field(default="", env="KIE_API_KEY")
-    ELEVEN_API_KEY: str = Field(default="", env="ELEVEN_API_KEY")
+    KIE_API_KEY: str = Field(..., env="KIE_API_KEY") # Required
+    ELEVEN_API_KEY: Optional[str] = Field(default="", env="ELEVEN_API_KEY") # Optional
     ELEVEN_VOICE_ID: str = Field(default="21m00Tcm4TlvDq8ikWAM", env="ELEVEN_VOICE_ID")
     BACKEND_BASE_URL: str = Field(default="http://localhost:8000", env="BACKEND_BASE_URL")
 
-    # Media and Storage
-    MEDIA_DIR: str = Field(default="./media", env="MEDIA_DIR")
-    PUBLIC_BASE_URL: str = Field(default="http://localhost:8000", env="PUBLIC_BASE_URL")
-
-    # Database Configuration - PostgreSQL for Production
-    DATABASE_URL: str = Field(default="sqlite:///./whatif.db", env="DATABASE_URL")
-    POSTGRES_HOST: str = Field(default="localhost", env="POSTGRES_HOST")
-    POSTGRES_PORT: int = Field(default=5432, env="POSTGRES_PORT")
-    POSTGRES_DB: str = Field(default="genscene", env="POSTGRES_DB")
-    POSTGRES_USER: str = Field(default="postgres", env="POSTGRES_USER")
-    POSTGRES_PASSWORD: str = Field(default="password", env="POSTGRES_PASSWORD")
-    POSTGRES_POOL_SIZE: int = Field(default=10, env="POSTGRES_POOL_SIZE")
-    POSTGRES_MAX_OVERFLOW: int = Field(default=20, env="POSTGRES_MAX_OVERFLOW")
-    POSTGRES_POOL_TIMEOUT: int = Field(default=30, env="POSTGRES_POOL_TIMEOUT")
-    POSTGRES_POOL_RECYCLE: int = Field(default=3600, env="POSTGRES_POOL_RECYCLE")
-
-    # Redis Configuration for Caching and Queues
-    REDIS_URL: str = Field(default="redis://localhost:6379/0", env="REDIS_URL")
-    REDIS_HOST: str = Field(default="localhost", env="REDIS_HOST")
-    REDIS_PORT: int = Field(default=6379, env="REDIS_PORT")
-    REDIS_DB: int = Field(default=0, env="REDIS_DB")
-    REDIS_PASSWORD: Optional[str] = Field(default=None, env="REDIS_PASSWORD")
-    REDIS_CACHE_TTL: int = Field(default=3600, env="REDIS_CACHE_TTL")  # 1 hour
-    REDIS_JOB_TTL: int = Field(default=86400, env="REDIS_JOB_TTL")  # 24 hours
-
-    # Worker Configuration
-    WORKER_CONCURRENCY: int = Field(default=4, env="WORKER_CONCURRENCY")
-    WORKER_POLL_INTERVAL: int = Field(default=5, env="WORKER_POLL_INTERVAL")
-    WORKER_MAX_RETRIES: int = Field(default=3, env="WORKER_MAX_RETRIES")
-    WORKER_RETRY_DELAY: int = Field(default=10, env="WORKER_RETRY_DELAY")
-    WORKER_TIMEOUT: int = Field(default=300, env="WORKER_TIMEOUT")  # 5 minutes
-
-    # Rate Limiting
-    RATE_LIMIT_DB_PATH: str = Field(default="./rate_limits.db", env="RATE_LIMIT_DB_PATH")
-    RATE_LIMIT_RPM: int = Field(default=120, env="RATE_LIMIT_RPM")
-    RATE_LIMIT_REDIS_PREFIX: str = Field(default="rate_limit:", env="RATE_LIMIT_REDIS_PREFIX")
+    # ... (skipping unchanged lines)
 
     # Security
-    BACKEND_API_KEY: str = Field(default="", env="BACKEND_API_KEY")
+    BACKEND_API_KEY: str = Field(..., env="BACKEND_API_KEY") # Required
     CORS_ALLOW_ORIGINS: str = Field(default="*", env="CORS_ALLOW_ORIGINS")
     JWT_SECRET_KEY: str = Field(default="your-secret-key-change-in-production", env="JWT_SECRET_KEY")
     JWT_ALGORITHM: str = Field(default="HS256", env="JWT_ALGORITHM")

@@ -1,44 +1,32 @@
 services:
-  genscene-backend:
+  api:
     build: .
-    container_name: genscene-backend
+    container_name: genscene-api
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --lifespan on
     ports:
       - "8000:8000"
     volumes:
       - genscene_data:/app/data
       - genscene_media:/app/media
     environment:
-      # Core Settings
       - BACKEND_BASE_URL=${BACKEND_BASE_URL:-http://localhost:8000}
       - MEDIA_DIR=/app/media
       - DATABASE_URL=sqlite:///./data/genscene.db
       - ENVIRONMENT=${ENVIRONMENT:-production}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
-
-      # Security
-      - BACKEND_API_KEY=${BACKEND_API_KEY:-genscene_api_key_prod_2025_secure}
-      - CORS_ALLOW_ORIGINS=${CORS_ALLOW_ORIGINS:-*}
-      - RATE_LIMIT_RPM=${RATE_LIMIT_RPM:-60}
-
-      # Worker Configuration
-      - WORKER_CONCURRENCY=${WORKER_CONCURRENCY:-4}
-      - WORKER_POLL_INTERVAL=${WORKER_POLL_INTERVAL:-2}
-
-      # Video Settings (9:16 for Shorts)
-      - COMPOSE_WIDTH=${COMPOSE_WIDTH:-720}
-      - COMPOSE_HEIGHT=${COMPOSE_HEIGHT:-1280}
-      - COMPOSE_FPS=${COMPOSE_FPS:-30}
-      - COMPOSE_CRF=${COMPOSE_CRF:-23}
-      - COMPOSE_PRESET=${COMPOSE_PRESET:-veryfast}
-
-      # Kie.ai Integration
-      - KIE_API_KEY=${KIE_API_KEY:-}
-      - KIE_BASE_URL=${KIE_BASE_URL:-https://api.kie.ai}
-
-      # Public URL for assets
       - PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-http://localhost:8000}
 
+      # Redis Config
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+      # Security
+      - BACKEND_API_KEY=${BACKEND_API_KEY}
+      - KIE_API_KEY=${KIE_API_KEY}
+
     restart: unless-stopped
+    depends_on:
+      - redis
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       interval: 30s
@@ -46,8 +34,49 @@ services:
       retries: 3
       start_period: 40s
 
+  worker:
+    build: .
+    container_name: genscene-worker
+    command: python -m src.worker_main
+    volumes:
+      - genscene_data:/app/data
+      - genscene_media:/app/media
+    environment:
+      - MEDIA_DIR=/app/media
+      - DATABASE_URL=sqlite:///./data/genscene.db
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-http://localhost:8000}
+
+      # Redis Config
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+      # Keys needed for external APIs
+      - KIE_API_KEY=${KIE_API_KEY}
+
+      # Video Settings
+      - COMPOSE_WIDTH=${COMPOSE_WIDTH:-720}
+      - COMPOSE_HEIGHT=${COMPOSE_HEIGHT:-1280}
+
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - api # Wait for API to maybe run migrations? (Ideal: migrations service)
+
+  redis:
+    image: redis:alpine
+    container_name: genscene-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - genscene_redis:/data
+    restart: always
+
 volumes:
   genscene_data:
     driver: local
   genscene_media:
+    driver: local
+  genscene_redis:
     driver: local

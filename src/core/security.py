@@ -81,16 +81,19 @@ class APIKeyMiddleware:
             key = auth_header.replace("Bearer ", "")
 
         # Validar la key
+        # Validate key against environment variable
         if not API_KEY:
             log.warning("BACKEND_API_KEY no configurada en el entorno")
-            # Si no hay key configurada,允许请求 (comportamiento actual)
-            await self.app(scope, receive, send)
+            # Fail safe: if no key configured, deny access by default or allow?
+            # Security best practice: Deny by default if auth is expected.
+            # However, previous logic allowed it. We will strictly check API_KEY existence.
+            response = Response(
+                content='{"detail": "Server misconfiguration: No API Key set"}',
+                status_code=500,
+                media_type="application/json"
+            )
+            await response(scope, receive, send)
             return
-
-        # Temporarily allow any key for testing
-        log.info("TEMP: Skipping API key validation for testing")
-        await self.app(scope, receive, send)
-        return
 
         if not key or key != API_KEY:
             log.warning(f"API key inválida recibida. Path: {request.url.path}, Key: {key[:8] if key else 'None'}...")

@@ -234,46 +234,13 @@ class EnterpriseJobManager:
         }
 
     async def initialize(self):
-        """Initialize the job manager and recover pending jobs"""
+        """Initialize the job manager (Redis Mode)"""
         try:
-            log.info("✅ Enterprise Job Manager initialized (memory-based)")
-            
-            # Recover jobs from DB
-            # Recover jobs from DB
-            conn = get_conn()
-            # New schema: job_id, state, progress, created_at, job_type, payload
-            # We select relevant columns: job_id, job_type, payload, state, progress
-            cursor = conn.execute("SELECT job_id, job_type, payload, state, progress FROM jobs WHERE state IN ('queued', 'running', 'processing')")
-            pending_jobs = cursor.fetchall()
-            conn.close()
-
-            count = 0
-            for row in pending_jobs:
-                job_id, job_type_db, payload_str, status, progress = row
-                
-                # Parse payload
-                try:
-                    payload = json.loads(payload_str) if payload_str else {}
-                except:
-                    payload = {}
-                
-                # Default fallback
-                if not job_type_db or job_type_db == 'unknown': 
-                    job_type_db = "quick_create"
-                
-                job = EnterpriseJob(job_id, job_type_db, payload)
-                job.status = "queued" # Reset to queued to ensure processing
-                job.progress = progress
-                
-                self._jobs[job_id] = job
-                await self._queue.put(job)
-                count += 1
-            
-            if count > 0:
-                log.info(f"♻️ Recovered {count} pending jobs from database")
-                
+            from core.queue import job_queue
+            log.info("✅ Enterprise Job Manager initialized (Redis Mode)")
+            # No internal workers started
         except Exception as e:
-            log.error(f"⚠️ Failed to recover pending jobs: {e}")
+            log.error(f"❌ Failed to initialize job manager: {e}")
 
     async def close(self):
         """Close the job manager"""
@@ -357,10 +324,7 @@ class EnterpriseJobManager:
 
         job = EnterpriseJob(job_id, job_type, payload)
         
-        # Store in memory
-        self._jobs[job_id] = job
-        
-        # Store in DB
+        # Store in DB (Source of Truth)
         try:
             conn = get_conn()
             upsert_job(conn, job_id, "queued", 0, job_type=job_type, payload=payload)
@@ -368,11 +332,11 @@ class EnterpriseJobManager:
         except Exception as e:
             log.error(f"Failed to persist job {job_id}: {e}")
         
-        # Add to processing queue
-        await self._queue.put(job)
+        # Add to Redis processing queue
+        await job_queue.enqueue(job_id, job_type, payload)
         self._stats["total_jobs"] += 1
         
-        log.info(f"📥 Enqueued job {job_id} (type={job_type})")
+        log.info(f"📥 Enqueued job {job_id} to Redis (type={job_type})")
         return job_id
 
     async def start_workers(self, num_workers: int = 4):
