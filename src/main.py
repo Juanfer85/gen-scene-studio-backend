@@ -29,7 +29,8 @@ from worker.enterprise_manager import (
     get_available_models, 
     get_style_model_mapping,
     VIDEO_MODELS_INFO,
-    STYLE_TO_MODEL
+    STYLE_TO_MODEL,
+    enterprise_job_manager
 )
 
 # Simple request model that accepts frontend format
@@ -109,12 +110,14 @@ log = setup_logging()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    log.info("Starting worker task...")
-    asyncio.create_task(worker())
-    log.info("Worker task started")
+    log.info("🚀 Initializing Enterprise Job Manager...")
+    await enterprise_job_manager.initialize()
+    await enterprise_job_manager.start_workers(num_workers=4)
+    log.info("✅ Enterprise Job Manager started with 4 workers")
     yield
     # Shutdown
-    log.info("Shutting down...")
+    log.info("🔌 Shutting down Enterprise Job Manager...")
+    await enterprise_job_manager.close()
 
 app = FastAPI(title="Gen Scene Studio Backend", version="0.2.0", lifespan=lifespan)
 
@@ -405,18 +408,14 @@ async def quick_create_full_universe(request: QuickCreateRequest, _api_key=Depen
         target_duration = duration_map.get(request.duration, 30)
         estimated_time = target_duration * 2  # Simple estimation
 
-        # Create job in database
-        conn = get_conn()
-        upsert_job(conn, job_id, "queued", 0)
-        conn.close()
-
-        queue.put_nowait({
-            "type": "quick_create_full_universe",
-            "payload": {
+        # Enqueue job using enterprise manager
+        await enterprise_job_manager.enqueue_job(
+            job_type="quick_create_full_universe",
+            payload={
                 "job_id": job_id,
                 "request": request.dict()
             }
-        })
+        )
 
         log.info(f"Quick Create Full Universe job {job_id} queued for idea: {request.idea_text[:50]}...")
 
