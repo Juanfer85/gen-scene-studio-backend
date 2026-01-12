@@ -339,6 +339,14 @@ def get_job_status_query(job_id: str = Query(..., description="Job ID to check")
         log.exception("Failed to get job status")
         raise HTTPException(status_code=500, detail=str(e))
 
+# NEW ENDPOINT 1B: Status with path parameter (REST-compliant)
+@app.get("/api/status/{job_id}")
+def get_job_status_path(job_id: str, _k=Depends(require_api_key)):
+    """Get job status using path parameter - REST-compliant endpoint"""
+    # Reuse the same logic as query parameter version
+    return get_job_status_query(job_id=job_id, _k=_k)
+
+
 # NEW ENDPOINT 2: Jobs Hub (for frontend Jobs Hub page)
 @app.get("/api/jobs-hub")
 def get_jobs_hub(_k=Depends(require_api_key)):
