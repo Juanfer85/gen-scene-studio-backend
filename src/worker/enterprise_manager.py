@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 from core.config import settings
 from core.db import get_conn
+from core.queue import job_queue # Redis Queue import
 from models.dao import upsert_job
 import subprocess
 import aiohttp
