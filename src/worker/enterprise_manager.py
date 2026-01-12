@@ -650,6 +650,12 @@ class EnterpriseJobManager:
                 if temp_crop_path.exists() and temp_crop_path.stat().st_size > 0:
                     os.replace(temp_crop_path, image_path)
                     log.info("✅ Image successfully transformed to 9:16 vertical format")
+                    
+                    # Force usage of local cropped image
+                    # Ensure path matches where FastAPI serves static files
+                    relative_path = f"media/{job_id}/{image_filename}"
+                    concept_image_url = f"{settings.PUBLIC_BASE_URL}/{relative_path}"
+                    log.info(f"🔄 Switched to local cropped image URL: {concept_image_url}")
             except Exception as e:
                 log.error(f"❌ Failed to crop image: {e}")
 
