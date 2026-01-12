@@ -247,6 +247,7 @@ async def generate_video(
                 
                 if not task_id:
                     log.error("❌ No taskId in response")
+                    log.error(f"DEBUG Response: {data}")
                     return None
                 
                 log.info(f"⏳ Task created: {task_id}")
